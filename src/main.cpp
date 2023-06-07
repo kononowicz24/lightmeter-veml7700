@@ -23,6 +23,8 @@ const String shutters_str[] = {"1/1000", "1/500", "1/250", "1/125", "1/60", "1/3
 
 void click_iso_m(); 
 void click_iso_p(); 
+void click_s_m(); 
+void click_s_p(); 
 void clicks();
 void u8g2update();
 void lightupdate();
@@ -32,6 +34,7 @@ volatile int iso_no = 5;
 volatile int iso = isos[iso_no];
 volatile int shutter_no = 3;
 volatile float t = shutters[shutter_no];
+volatile float N = 2.8;
 float LV = 0;
 float EV = 0;
 
@@ -52,6 +55,10 @@ void setup() {
 	iso_no = iso_cell <= 14 ? iso_cell : 5;
 	iso = isos[iso_no];
 
+	int shutter_cell = EEPROM.read(10);
+	shutter_no = shutter_cell <= 14 ? shutter_cell : 5;
+	t = shutters[shutter_no];
+
 	pinMode(9, INPUT_PULLUP);
 	pinMode(0, INPUT_PULLUP);
 	pinMode(1, INPUT_PULLUP);
@@ -67,7 +74,9 @@ void u8g2update() {
 		u8g2.firstPage();
 		do {
 			u8g2.setFont(u8g2_font_6x12_tr  );
-			u8g2.drawStr(0,8,"t: 1/125");
+			u8g2.drawStr(0,8,"t: ");
+			u8g2.setCursor(18,8);
+			u8g2.print(shutters_str[shutter_no]);
 
 			u8g2.drawStr(0, 16,"Lux: ");
 			u8g2.setCursor(26,16);
@@ -86,8 +95,11 @@ void u8g2update() {
 			u8g2.print(EV);
 
 			u8g2.drawStr(110,32,"A");
+			
 			u8g2.setFont(u8g2_font_logisoso24_tn );
-			u8g2.drawStr(80,24,"2.8");
+			u8g2.setCursor(80,24);
+			u8g2.print(N);
+			//u8g2.drawStr(80,24,"2.8");
 
 		} while ( u8g2.nextPage() );
 } //u8g2update
@@ -96,6 +108,7 @@ void lightupdate() {
 		lux = veml.readLux(VEML_LUX_AUTO);
 		LV = logf(lux/2.5f)/_M_LN2;
 		EV = LV + logf(iso/100.0f)/_M_LN2;
+		N = sqrt(t*powf(2,EV));
 } //lightupdate
 
 
@@ -110,6 +123,12 @@ void clicks() {
 	else
 	if (digitalRead(2) == LOW) 
 		click_iso_m();
+	else
+	if (digitalRead(3) == LOW) 
+		click_s_m();
+	else
+	if (digitalRead(1) == LOW) 
+		click_s_p();
 } //ticks
 
 void click_iso_m() {
@@ -123,5 +142,19 @@ void click_iso_p() {
   	if (iso_no <= 13) iso_no++;
 	iso = isos[iso_no];
 	EEPROM.write(0, iso_no);
+	EEPROM.commit();
+} // click2
+
+void click_s_m() {
+  	if (shutter_no > 0) shutter_no--;
+	t = shutters[shutter_no];
+	EEPROM.write(10, shutter_no);
+	EEPROM.commit();
+} // click1
+
+void click_s_p() {
+  	if (shutter_no <= 13) shutter_no++;
+	t = shutters[shutter_no];
+	EEPROM.write(10, shutter_no);
 	EEPROM.commit();
 } // click2
