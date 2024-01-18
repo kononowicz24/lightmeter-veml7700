@@ -1,0 +1,1 @@
+A lightmeter for an analog camera powered by a Infenion XMC2GO board. Features 5 buttons, OLED screen with reading and a VEML7700 light meter IC. The device is powered from a LIR2032 Li-ion cell in a standard form factor. 
